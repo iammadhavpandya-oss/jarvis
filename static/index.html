@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>J.A.R.V.I.S</title>
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>" />
+</head>
+<body>
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="ambient" aria-hidden="true"></div>
+
+  <div class="app">
+    <aside class="sidebar glass">
+      <div class="brand">
+        <div class="arc-reactor" aria-hidden="true"></div>
+        <div>
+          <h1>J.A.R.V.I.S</h1>
+          <p class="tag">Just A Rather Very Intelligent System</p>
+        </div>
+      </div>
+      <button id="btn-new" class="btn primary" type="button">+ New chat</button>
+      <div id="conv-list" class="conv-list"></div>
+      <div class="sidebar-foot">
+        <div id="status-pill" class="pill warn">Checking…</div>
+        <div id="model-label" class="muted tiny"></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar glass">
+        <div class="hud-title">
+          <span class="corner tl"></span>
+          <span class="corner tr"></span>
+          <span id="chat-title">Systems online</span>
+          <span class="corner bl"></span>
+          <span class="corner br"></span>
+        </div>
+        <div class="top-actions">
+          <button id="btn-mute" class="btn ghost" type="button" title="Toggle TTS mute">🔊 TTS</button>
+          <button id="btn-voice" class="btn ghost mic" type="button" title="Push to talk (hold or click)">🎙️ Mic</button>
+        </div>
+      </header>
+
+      <section id="messages" class="messages" aria-live="polite"></section>
+
+      <footer class="composer glass">
+        <div id="listening-banner" class="listening hidden">Listening… speak now (Web Speech API)</div>
+        <div class="composer-row">
+          <textarea id="input" rows="1" placeholder="Command, Madhav-ji… (Enter to send, Shift+Enter newline)"></textarea>
+          <button id="btn-send" class="btn primary send" type="button">Send</button>
+        </div>
+        <p class="hint muted tiny">Mic uses browser Web Speech API (Chrome/Edge recommended). Voice reply via edge-tts.</p>
+      </footer>
+    </main>
+  </div>
+
+  <div id="toast" class="toast hidden" role="alert"></div>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
