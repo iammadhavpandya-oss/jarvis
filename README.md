@@ -1,111 +1,125 @@
-# J.A.R.V.I.S — Windows desktop assistant (v1)
+# J.A.R.V.I.S — desktop assistant (v1.1)
 
-Dark Iron-Man / HUD chat UI with **voice in** (browser mic), **voice out** (edge-tts), multi-turn streaming chat, and local SQLite history.
+Dark Iron-Man / HUD chat UI with **voice in** (browser mic), **voice out** (edge-tts), **free web search** (DuckDuckGo / ddgs), **long-term memory** (SQLite), multi-turn streaming chat, and local chat history.
 
-Stack: **Python 3.11+ · FastAPI · static HTML/CSS/JS · edge-tts · Web Speech API**
+Stack: **Python 3.11+ · FastAPI · static HTML/CSS/JS · edge-tts · Web Speech API · Ollama (local LLM)**
 
 Repo: https://github.com/iammadhavpandya-oss/jarvis
 
+> **Primary runtime:** Ramdoot Linux box at `/workspace/jarvis` (Ollama + uvicorn already there).  
+> **Windows PC:** you can run the UI/server there too, but **Ollama on the PC is optional** — Madhav does not need to install Ollama on Windows if the box is serving.
+
 ---
 
-## Quick start (Madhav — Windows)
+## Quick start (Ramdoot Linux box — recommended)
 
-Assume project path: `C:\Users\Admin\jarvis` (clone or copy here).
+```bash
+cd /workspace/jarvis
+source .venv/bin/activate   # or: .venv/bin/pip install -r requirements.txt
+# Ollama should already be running with llama3.2:3b
+uvicorn app.main:app --host 127.0.0.1 --port 8765
+```
+
+Open http://127.0.0.1:8765
+
+`.env` defaults:
+```env
+LLM_PROVIDER=ollama
+OLLAMA_BASE_URL=http://127.0.0.1:11434/v1
+OLLAMA_MODEL=llama3.2:3b
+HOST=127.0.0.1
+PORT=8765
+TTS_VOICE=en-IN-PrabhatNeural
+MAX_CONTEXT_TURNS=20
+```
+
+---
+
+## Quick start (Windows PC — optional)
+
+Assume project path: `C:\Users\Admin\jarvis`.
 
 ### 1. Install Python
-- Download **Python 3.11+** from https://www.python.org/downloads/
-- Installer mein **"Add python.exe to PATH"** tick karo
-- Verify in Command Prompt:
-  ```bat
-  py -3 --version
-  ```
+- Python 3.11+ from https://www.python.org/downloads/ — tick **Add to PATH**
+- `py -3 --version`
 
-### 2. Get code
+### 2. Ollama on PC — **optional**
+Only needed if you want a **local** LLM on Windows. Otherwise use a cloud provider in `.env`, or keep using the Ramdoot box.
+
+If you do install: https://ollama.com then `ollama pull llama3.2:3b`
+
+### 3. Get code
 ```bat
 cd C:\Users\Admin
 git clone https://github.com/iammadhavpandya-oss/jarvis.git
 cd jarvis
 ```
-(Or unzip / copy the folder to `C:\Users\Admin\jarvis`.)
 
-### 3. Create `.env`
+### 4. Create `.env`
 ```bat
 copy .env.example .env
 notepad .env
 ```
 
-Set **one** provider:
+**Ollama (if installed on PC):**
+```env
+LLM_PROVIDER=ollama
+OLLAMA_BASE_URL=http://127.0.0.1:11434/v1
+OLLAMA_MODEL=llama3.2:3b
+```
 
-**OpenAI**
+**Or OpenAI / Anthropic** (paid cloud — no local Ollama):
 ```env
 LLM_PROVIDER=openai
 OPENAI_API_KEY=sk-...
-OPENAI_MODEL=gpt-4o-mini
 ```
 
-**Anthropic**
-```env
-LLM_PROVIDER=anthropic
-ANTHROPIC_API_KEY=sk-ant-...
-ANTHROPIC_MODEL=claude-sonnet-4-20250514
-```
-
-Optional TTS voice (examples):
-```env
-TTS_VOICE=en-IN-PrabhatNeural
-# or en-US-GuyNeural / hi-IN-MadhurNeural / en-IN-NeerjaNeural
-```
-
-> Kabhi bhi real keys git mein mat daalo. `.env` is local-only.
-
-### 4. Run (easiest)
-Double-click **`start.bat`**
-
-Ya Command Prompt se:
+### 5. Run
+Double-click **`start.bat`** or:
 ```bat
 cd C:\Users\Admin\jarvis
 start.bat
 ```
 
-Script will:
-1. Create `.venv` if needed  
-2. `pip install -r requirements.txt`  
-3. Open http://127.0.0.1:8765  
-4. Start the API server  
+---
 
-Manual alternative:
-```bat
-cd C:\Users\Admin\jarvis
-py -3 -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn app.main:app --host 127.0.0.1 --port 8765
-```
-Then open Chrome/Edge: http://127.0.0.1:8765
+## Long-term memory
 
-### 5. Test mic + TTS
-1. Sidebar pe status **LLM ready** (green) hona chahiye — warna `.env` key check karo  
-2. Type a message → Jarvis streams reply  
-3. **🔊 TTS** button se voice on/off (mute toggle)  
-4. **🎙️ Mic** — Chrome/Edge allow microphone; speak (Web Speech API, free, no download)  
-5. Agar API key missing ho → UI mein clear red error / toast dikhega  
+Jarvis stores durable facts in `data/memory.db` and injects the latest ~30 into every chat as a **LONG-TERM MEMORY** block.
 
-**Mic note:** Web Speech API best on **Chrome or Edge**. Firefox may not support it well — typing always works.
+### Chat phrases (auto-save)
+Say any of these, then the fact:
+- `yaad rakh …` / `yaad rakho …`
+- `remember …` / `remember this …`
+- `save this …`
+- `memory mein daal …`
+
+Example: *“yaad rakh mera Jetking campus Vasai hai”* → saved; Jarvis confirms briefly.
+
+### UI
+- Sidebar **🧠 Memory** button shows the count
+- Open panel → list / add (optional key) / delete
+- Also: `GET|POST /api/memory`, `DELETE /api/memory/{id}`
+
+Memories persist across chats and restarts (same `data/` folder).
 
 ---
 
-## Features (v1)
+## Features (v1.1)
 | Feature | How |
 |--------|-----|
 | HUD chat UI | Cyan/amber glass theme |
 | Streaming chat | SSE from FastAPI |
-| OpenAI / Anthropic | Via `.env` |
-| History | SQLite in `data/chat_history.db` |
+| **Ollama (free local)** | OpenAI-compatible `/v1` — default `llama3.2:3b`, last **20 turns** trimmed |
+| OpenAI / Anthropic | Optional paid via `.env` |
+| Chat history | SQLite `data/chat_history.db` |
+| **Long-term memory** | SQLite `data/memory.db` — phrases + UI panel |
 | TTS | `edge-tts` → `/api/tts` |
 | STT | Browser Web Speech API |
-| Mute | LocalStorage toggle |
+| Mute / Web toggles | LocalStorage |
+| **Web search (free)** | DuckDuckGo via `ddgs` — 🌐 Web or auto keywords |
 
-Optional later: Whisper STT if you set `WHISPER_STT=true` and wire OpenAI Whisper — see `.env.example` (frontend still uses Web Speech by default).
+Health: `GET /api/health` includes `memory_count`.
 
 ---
 
@@ -115,50 +129,39 @@ jarvis/
   app/
     main.py       # FastAPI routes
     config.py     # env + Jarvis system prompt
-    llm.py        # OpenAI / Anthropic streaming
+    llm.py        # Ollama / OpenAI / Anthropic streaming
     history.py    # SQLite conversations
+    memory.py     # SQLite long-term memory
     tts.py        # edge-tts
+    websearch.py  # free DuckDuckGo search (ddgs)
   static/
     index.html
     css/style.css
     js/app.js
-  data/           # created at runtime (SQLite)
+  data/           # chat_history.db + memory.db (runtime)
   .env.example
   requirements.txt
   start.bat
-  integrations.md
   README.md
 ```
 
 ---
 
 ## Persona
-Jarvis is dry, competent, short; Hinglish OK; respectful **aap / ji**. No help with crime, phishing, or unauthorized hacking.
+Respectful **aap / ji**; short Jarvis tone; Jetking/study vs personal hats; uses LONG-TERM MEMORY and web search when available. No help with crime, phishing, or unauthorized hacking.
 
 ---
 
 ## Troubleshooting
 | Problem | Fix |
 |--------|-----|
-| `API key missing` in UI | Edit `.env`, restart `start.bat` |
-| Port in use | Change `PORT=8766` in `.env` and open that URL |
-| Mic not working | Use Chrome/Edge; allow mic permission for `http://127.0.0.1:8765` |
-| TTS silent | Unmute 🔊; check internet (edge-tts uses Microsoft voices online) |
-| `pip` / venv errors | Reinstall Python with PATH; run CMD as normal user from `C:\Users\Admin\jarvis` |
-
----
-
-## Push to GitHub
-```bat
-cd C:\Users\Admin\jarvis
-git init
-git add .
-git commit -m "v1: Jarvis HUD assistant"
-git branch -M main
-git remote add origin https://github.com/iammadhavpandya-oss/jarvis.git
-git push -u origin main
-```
-Ensure `.gitignore` excludes `.env`, `.venv/`, and `data/*.db`.
+| `Ollama is not running` | On Ramdoot: ensure `ollama serve`. On PC: install optional, or switch to openai/anthropic in `.env` |
+| Model slow | Keep `llama3.2:3b`; context already trimmed to 20 turns |
+| Port in use | Change `PORT` in `.env` |
+| Mic | Chrome/Edge + allow mic for the page |
+| TTS silent | Unmute 🔊; edge-tts needs internet |
+| Web search empty | Needs internet; retry / rephrase |
+| Memory not sticking | Check `data/memory.db` exists; sidebar count should rise |
 
 ---
 

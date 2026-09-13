@@ -6,3 +6,4 @@ edge-tts>=6.1.12
 pydantic>=2.9.0
 pydantic-settings>=2.6.0
 aiosqlite>=0.20.0
+ddgs>=9.0.0

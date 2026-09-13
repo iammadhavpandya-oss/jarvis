@@ -21,6 +21,7 @@
         </div>
       </div>
       <button id="btn-new" class="btn primary" type="button">+ New chat</button>
+      <button id="btn-memory" class="btn ghost memory-btn" type="button" title="Long-term memory">🧠 Memory <span id="memory-count" class="mem-count">0</span></button>
       <div id="conv-list" class="conv-list"></div>
       <div class="sidebar-foot">
         <div id="status-pill" class="pill warn">Checking…</div>
@@ -38,6 +39,7 @@
           <span class="corner br"></span>
         </div>
         <div class="top-actions">
+          <button id="btn-web" class="btn ghost" type="button" title="Toggle free web search (DuckDuckGo)">🌐 Web</button>
           <button id="btn-mute" class="btn ghost" type="button" title="Toggle TTS mute">🔊 TTS</button>
           <button id="btn-voice" class="btn ghost mic" type="button" title="Push to talk (hold or click)">🎙️ Mic</button>
         </div>
@@ -47,13 +49,31 @@
 
       <footer class="composer glass">
         <div id="listening-banner" class="listening hidden">Listening… speak now (Web Speech API)</div>
+        <div id="searching-banner" class="listening searching hidden">Searching the web…</div>
         <div class="composer-row">
           <textarea id="input" rows="1" placeholder="Command, Madhav-ji… (Enter to send, Shift+Enter newline)"></textarea>
           <button id="btn-send" class="btn primary send" type="button">Send</button>
         </div>
-        <p class="hint muted tiny">Mic uses browser Web Speech API (Chrome/Edge recommended). Voice reply via edge-tts.</p>
+        <p class="hint muted tiny">Mic = Web Speech (Chrome/Edge). TTS = edge-tts. 🌐 Web = DuckDuckGo. Say “yaad rakh / remember …” for long-term memory.</p>
       </footer>
     </main>
+  </div>
+
+  <!-- Memory panel -->
+  <div id="memory-panel" class="memory-panel hidden" role="dialog" aria-label="Long-term memory">
+    <div class="memory-card glass">
+      <div class="memory-head">
+        <h2>🧠 Long-term memory</h2>
+        <button id="btn-memory-close" class="btn ghost" type="button" title="Close">✕</button>
+      </div>
+      <p class="muted tiny memory-help">Facts survive across chats. Chat: <em>yaad rakh …</em>, <em>remember …</em>, <em>save this …</em>, <em>memory mein daal …</em></p>
+      <div class="memory-add">
+        <input id="memory-key" type="text" placeholder="Key (optional)" maxlength="120" />
+        <textarea id="memory-content" rows="2" placeholder="Fact to remember…" maxlength="4000"></textarea>
+        <button id="btn-memory-add" class="btn primary" type="button">Add</button>
+      </div>
+      <div id="memory-list" class="memory-list"></div>
+    </div>
   </div>
 
   <div id="toast" class="toast hidden" role="alert"></div>

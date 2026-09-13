@@ -1,12 +1,12 @@
-"""OpenAI / Anthropic chat with optional streaming."""
+"""OpenAI / Anthropic / Ollama chat with optional streaming."""
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
-from typing import Any
+from typing import Any, Optional
 
 import httpx
 
-from .config import SYSTEM_PROMPT, Settings
+from .config import MAX_CONTEXT_TURNS, SYSTEM_PROMPT, Settings
 
 
 class LLMError(Exception):
@@ -15,22 +15,141 @@ class LLMError(Exception):
         self.status = status
 
 
+def trim_messages(
+    messages: list[dict[str, str]],
+    max_turns: int = MAX_CONTEXT_TURNS,
+) -> list[dict[str, str]]:
+    """Keep the last N user/assistant turns (~2 messages each) for small models."""
+    if max_turns <= 0 or len(messages) <= max_turns * 2:
+        return messages
+    return messages[-(max_turns * 2) :]
+
+
+def build_system_prompt(extra_blocks: Optional[list[str]] = None) -> str:
+    parts = [SYSTEM_PROMPT.strip()]
+    for block in extra_blocks or []:
+        b = (block or "").strip()
+        if b:
+            parts.append(b)
+    return "\n\n".join(parts)
+
+
 async def stream_chat(
     settings: Settings,
     messages: list[dict[str, str]],
+    *,
+    system_prompt: Optional[str] = None,
 ) -> AsyncIterator[str]:
+    system = system_prompt or SYSTEM_PROMPT
+    messages = trim_messages(messages)
     provider = settings.llm_provider.lower().strip()
     if provider == "anthropic":
-        async for chunk in _stream_anthropic(settings, messages):
+        async for chunk in _stream_anthropic(settings, messages, system=system):
+            yield chunk
+    elif provider == "ollama":
+        async for chunk in _stream_ollama(settings, messages, system=system):
             yield chunk
     else:
-        async for chunk in _stream_openai(settings, messages):
+        async for chunk in _stream_openai(settings, messages, system=system):
             yield chunk
+
+
+async def _stream_openai_compatible(
+    settings: Settings,
+    messages: list[dict[str, str]],
+    *,
+    base_url: str,
+    api_key: str,
+    model: str,
+    provider_label: str,
+    system: str,
+) -> AsyncIterator[str]:
+    """Stream chat completions from an OpenAI-compatible endpoint."""
+    url = base_url.rstrip("/") + "/chat/completions"
+    payload: dict[str, Any] = {
+        "model": model,
+        "messages": [{"role": "system", "content": system}, *messages],
+        "stream": True,
+        "temperature": 0.7,
+    }
+    headers = {
+        "Authorization": f"Bearer {api_key or 'ollama'}",
+        "Content-Type": "application/json",
+    }
+    try:
+        async with httpx.AsyncClient(timeout=120.0) as client:
+            async with client.stream(
+                "POST",
+                url,
+                headers=headers,
+                json=payload,
+            ) as resp:
+                if resp.status_code >= 400:
+                    body = await resp.aread()
+                    raise LLMError(
+                        f"{provider_label} error {resp.status_code}: "
+                        f"{body.decode(errors='replace')[:400]}",
+                        status=resp.status_code,
+                    )
+                async for line in resp.aiter_lines():
+                    if not line.startswith("data: "):
+                        continue
+                    data = line[6:].strip()
+                    if data == "[DONE]":
+                        break
+                    try:
+                        import json
+
+                        obj = json.loads(data)
+                        delta = obj["choices"][0].get("delta", {})
+                        content = delta.get("content")
+                        if content:
+                            yield content
+                    except Exception:
+                        continue
+    except httpx.ConnectError as e:
+        if provider_label.lower() == "ollama":
+            raise LLMError(
+                "Ollama is not running (connection refused). "
+                "On Ramdoot Linux box Ollama is expected; PC install is optional. "
+                "Install from https://ollama.com , start it, then run: "
+                f"ollama pull {model}",
+                status=503,
+            ) from e
+        raise LLMError(
+            f"Could not connect to {provider_label} at {url}: {e}",
+            status=503,
+        ) from e
+    except httpx.HTTPError as e:
+        raise LLMError(
+            f"{provider_label} request failed: {e}",
+            status=502,
+        ) from e
+
+
+async def _stream_ollama(
+    settings: Settings,
+    messages: list[dict[str, str]],
+    *,
+    system: str,
+) -> AsyncIterator[str]:
+    async for chunk in _stream_openai_compatible(
+        settings,
+        messages,
+        base_url=settings.ollama_base_url,
+        api_key="ollama",
+        model=settings.ollama_model,
+        provider_label="Ollama",
+        system=system,
+    ):
+        yield chunk
 
 
 async def _stream_openai(
     settings: Settings,
     messages: list[dict[str, str]],
+    *,
+    system: str,
 ) -> AsyncIterator[str]:
     if not settings.openai_api_key.strip():
         raise LLMError(
@@ -39,7 +158,7 @@ async def _stream_openai(
         )
     payload: dict[str, Any] = {
         "model": settings.openai_model,
-        "messages": [{"role": "system", "content": SYSTEM_PROMPT}, *messages],
+        "messages": [{"role": "system", "content": system}, *messages],
         "stream": True,
         "temperature": 0.7,
     }
@@ -81,6 +200,8 @@ async def _stream_openai(
 async def _stream_anthropic(
     settings: Settings,
     messages: list[dict[str, str]],
+    *,
+    system: str,
 ) -> AsyncIterator[str]:
     if not settings.anthropic_api_key.strip():
         raise LLMError(
@@ -103,7 +224,7 @@ async def _stream_anthropic(
     payload = {
         "model": settings.anthropic_model,
         "max_tokens": 2048,
-        "system": SYSTEM_PROMPT,
+        "system": system,
         "messages": anth_messages,
         "stream": True,
         "temperature": 0.7,

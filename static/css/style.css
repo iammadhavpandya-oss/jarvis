@@ -160,6 +160,14 @@ body {
   animation: pulse 1.2s ease infinite;
 }
 .btn.muted-on { opacity: 0.55; }
+.btn.web-on {
+  border-color: var(--ok); color: var(--ok);
+  box-shadow: 0 0 12px rgba(61, 255, 181, 0.25);
+}
+.listening.searching {
+  border-color: rgba(0, 229, 255, 0.45);
+  color: var(--cyan);
+}
 @keyframes pulse {
   50% { box-shadow: 0 0 24px rgba(255,92,122,0.55); }
 }
@@ -256,4 +264,124 @@ body {
   .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
   .sidebar { max-height: 180px; }
   .conv-list { flex-direction: row; overflow-x: auto; }
+}
+
+/* —— Long-term memory panel —— */
+.memory-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.mem-count {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--cyan-dim);
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  color: var(--cyan);
+  min-width: 1.5rem;
+  text-align: center;
+}
+.memory-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(2, 6, 14, 0.72);
+  padding: 16px;
+}
+.memory-card {
+  width: min(480px, 96vw);
+  max-height: min(80vh, 640px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+}
+.memory-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.memory-head h2 {
+  margin: 0;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  color: var(--cyan);
+  font-weight: 600;
+}
+.memory-help { margin: 0; line-height: 1.4; }
+.memory-add {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+.memory-add input,
+.memory-add textarea {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  color: var(--text);
+  padding: 10px 12px;
+  font: inherit;
+  outline: none;
+}
+.memory-add input { grid-column: 1 / -1; }
+.memory-add textarea { grid-column: 1; resize: vertical; min-height: 52px; }
+.memory-add input:focus,
+.memory-add textarea:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.25);
+}
+.memory-list {
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  flex: 1;
+  padding-right: 2px;
+}
+.memory-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 229, 255, 0.18);
+  background: rgba(0, 229, 255, 0.05);
+}
+.memory-item .body { flex: 1; min-width: 0; }
+.memory-item .key {
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin-bottom: 4px;
+}
+.memory-item .content {
+  font-size: 0.85rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.memory-item .del {
+  border: none;
+  background: none;
+  color: var(--danger);
+  cursor: pointer;
+  opacity: 0.55;
+  font-size: 0.95rem;
+  padding: 0 4px;
+}
+.memory-item:hover .del { opacity: 1; }
+.memory-empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 24px 8px;
+  font-size: 0.85rem;
 }
